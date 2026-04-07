@@ -54,3 +54,4 @@ app.delete('/expenses/:id', (req, res) => {
 });
 
 app.listen(3000, () => console.log('✅ Server running on port 3000'));
+console.log('Make sure to update the API URL in your React Native app to http://192.168.100.9:3000');
