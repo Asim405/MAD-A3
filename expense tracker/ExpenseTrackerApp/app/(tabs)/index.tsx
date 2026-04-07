@@ -1,98 +1,62 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { useEffect, useState } from 'react';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import axios from 'axios';
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+const API = 'http://YOUR_IP:3000'; // 👈 replace with your IP
 
 export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+  const [expenses, setExpenses] = useState([]);
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+  const fetchExpenses = async () => {
+    try {
+      const res = await axios.get(`${API}/expenses`);
+      setExpenses(res.data);
+    } catch (err) {
+      Alert.alert('Error', 'Cannot connect to server');
+    }
+  };
+
+  const deleteExpense = async (id: number) => {
+    await axios.delete(`${API}/expenses/${id}`);
+    fetchExpenses();
+  };
+
+  useEffect(() => { fetchExpenses(); }, []);
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.header}>💸 My Expenses</Text>
+      <FlatList
+        data={expenses}
+        keyExtractor={(item: any) => item.id.toString()}
+        renderItem={({ item }: any) => (
+          <View style={styles.card}>
+            <View>
+              <Text style={styles.title}>{item.title}</Text>
+              <Text style={styles.category}>📂 {item.category}</Text>
+            </View>
+            <View style={styles.right}>
+              <Text style={styles.amount}>${item.amount}</Text>
+              <TouchableOpacity onPress={() => deleteExpense(item.id)}>
+                <Text style={styles.delete}>🗑️</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+      />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-  },
+  container: { flex: 1, backgroundColor: '#f5f5f5', padding: 16 },
+  header: { fontSize: 24, fontWeight: 'bold', marginBottom: 16, color: '#6C63FF' },
+  card: { backgroundColor: '#fff', borderRadius: 12, padding: 16,
+    marginBottom: 10, flexDirection: 'row', justifyContent: 'space-between',
+    elevation: 3 },
+  title: { fontSize: 16, fontWeight: 'bold' },
+  category: { color: 'gray', marginTop: 4 },
+  right: { alignItems: 'flex-end' },
+  amount: { fontSize: 16, fontWeight: 'bold', color: '#6C63FF' },
+  delete: { fontSize: 20, marginTop: 6 },
 });
